@@ -1,0 +1,92 @@
+{
+  "name": "medusa-plugin-converter-studio",
+  "version": "1.0.0",
+  "description": "Medusa v2 plugin: converts product images to WebP, AVIF or JPG (HEIC, PNG, JPG, TIFF, BMP) with Converter Studio's API, automatically on upload or from the admin. Originals are kept and can be restored.",
+  "author": "Converter Studio <support@converter.studio> (https://converter.studio)",
+  "license": "MIT",
+  "homepage": "https://converter.studio/developers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tariksucu/medusa-plugin-converter-studio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tariksucu/medusa-plugin-converter-studio/issues",
+    "email": "support@converter.studio"
+  },
+  "files": [
+    ".medusa/server",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./workflows": "./.medusa/server/src/workflows/index.js",
+    "./.medusa/server/src/modules/*": "./.medusa/server/src/modules/*/index.js",
+    "./modules/*": "./.medusa/server/src/modules/*/index.js",
+    "./providers/*": "./.medusa/server/src/providers/*/index.js",
+    "./*": "./.medusa/server/src/*.js",
+    "./admin": {
+      "import": "./.medusa/server/src/admin/index.mjs",
+      "require": "./.medusa/server/src/admin/index.js",
+      "default": "./.medusa/server/src/admin/index.js"
+    }
+  },
+  "keywords": [
+    "medusa-v2",
+    "medusa-plugin-integration",
+    "medusa-plugin-other",
+    "medusa-plugin",
+    "medusa",
+    "plugin",
+    "converter-studio",
+    "image-optimization",
+    "webp",
+    "avif",
+    "heic",
+    "image-conversion",
+    "product-images"
+  ],
+  "scripts": {
+    "build": "medusa plugin:build",
+    "dev": "medusa plugin:develop",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.test.json && tsc --noEmit -p src/admin/tsconfig.json",
+    "test": "jest --selectProjects unit",
+    "test:integration": "jest --selectProjects integration --runInBand",
+    "prepublishOnly": "medusa plugin:build"
+  },
+  "devDependencies": {
+    "@medusajs/admin-sdk": "2.22.7",
+    "@medusajs/cli": "2.22.7",
+    "@medusajs/framework": "2.22.7",
+    "@medusajs/icons": "2.22.7",
+    "@medusajs/medusa": "2.22.7",
+    "@medusajs/test-utils": "2.22.7",
+    "@medusajs/ui": "4.2.1",
+    "@swc/core": "^1.7.28",
+    "@swc/jest": "^0.2.39",
+    "@tanstack/react-query": "^5.64.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.2.25",
+    "jest": "^30.2.0",
+    "prop-types": "^15.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vite": "^7.3.7",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "peerDependencies": {
+    "@medusajs/admin-sdk": "^2.11.2",
+    "@medusajs/framework": "^2.11.2",
+    "@medusajs/icons": "^2.11.2",
+    "@medusajs/medusa": "^2.11.2",
+    "@medusajs/ui": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

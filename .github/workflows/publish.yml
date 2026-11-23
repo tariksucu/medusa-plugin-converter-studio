@@ -1,0 +1,85 @@
+# Publishes medusa-plugin-converter-studio to npm when a version tag is pushed.
+#
+# The tag ("X.Y.Z" or "vX.Y.Z") must equal the version in package.json (and
+# VERSION in src/lib/client.ts, which a unit test checks). The job checks the
+# tag, runs the type check, the unit tests and the build, then publishes with
+# an npm provenance statement.
+#
+# Authentication:
+# - First publish: the repository secret NPM_TOKEN, a short-lived granular npm
+#   token with "Read and write" and "Bypass two-factor authentication" (a
+#   trusted publisher can only be added once the package exists on npm).
+# - Later publishes: npm trusted publishing (OIDC). On npmjs.com, the package's
+#   Settings → Trusted Publisher → GitHub Actions: owner tariksucu, repository
+#   medusa-plugin-converter-studio, workflow publish.yml, no environment. Then
+#   delete NPM_TOKEN here and revoke the token: without the secret, npm uses
+#   GitHub's OIDC token. Trusted publishing needs Node.js 22.14.0+ and npm
+#   11.5.1+, which the steps below set up.
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      # OIDC token for the provenance statement and trusted publishing.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Use npm 11.5.1 or newer (trusted publishing)
+        run: 'npm install --global npm@^11.5.1'
+
+      - name: Check that the tag is the package version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in package.json"
+            exit 1
+          fi
+
+      # Dependencies' install scripts are not needed, and none runs in a job
+      # that can publish.
+      - name: Install dependencies
+        run: 'npm ci --ignore-scripts'
+
+      - name: Type check (server, tests, admin)
+        run: 'npm run typecheck'
+
+      - name: Run tests
+        run: 'npm test'
+
+      - name: Build
+        run: 'npm run build'
+
+      # npm publish runs prepublishOnly (the build) once more.
+      - name: Publish to npm with provenance
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          fi
+          npm publish --provenance --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
