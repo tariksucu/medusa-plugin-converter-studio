@@ -92,7 +92,7 @@ All options are optional.
 ## Credits and pricing
 
 Conversions use your Converter Studio account's credits, the same credits as on the website. Most
-images cost **1 credit**. Free accounts get 13 credits a day, and paid plans include more credits
+images cost **1 credit**. Free accounts get 25 credits a day, and paid plans include more credits
 each month. See [converter.studio/pricing](https://converter.studio/pricing).
 
 When the credits run out:
