@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from '@medusajs/framework/http';
 import { MedusaError } from '@medusajs/framework/utils';
 import { readImageIds } from '../../../../../../lib/http';
-import { isRunning } from '../../../../../../lib/runs';
+import { isRunning, ownRunContext } from '../../../../../../lib/runs';
 import { restoreProductImagesWorkflow } from '../../../../../../workflows/restore-product-images';
 import { loadProduct } from '../../../../../../workflows/steps/load-product';
 
@@ -21,6 +21,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     );
   const { result } = await restoreProductImagesWorkflow(req.scope).run({
     input: { product_id: productId, image_ids: imageIds },
+    context: ownRunContext(),
   });
   res.json(result);
 }

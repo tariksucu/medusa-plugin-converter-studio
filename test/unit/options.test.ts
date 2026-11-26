@@ -13,7 +13,7 @@ describe('resolveOptions', () => {
       format: 'webp',
       sources: ['jpg', 'png', 'heic', 'tiff', 'bmp'],
       quality: 'balanced',
-      maxSize: null,
+      maxSize: 2560,
       keepMetadata: false,
       maxCredits: 1,
       autoConvert: true,
@@ -22,6 +22,23 @@ describe('resolveOptions', () => {
       timeoutSeconds: 180,
       apiUrl: DEFAULT_API_URL,
     });
+  });
+
+  it('shrinks large photos to 2560 px by default; null or 0 keeps every size', () => {
+    expect(resolveOptions({}, {}).maxSize).toBe(2560);
+    expect(resolveOptions({ maxSize: 1920 }, {}).maxSize).toBe(1920);
+    expect(resolveOptions({ maxSize: null }, {}).maxSize).toBeNull();
+    expect(resolveOptions({ maxSize: 0 }, {}).maxSize).toBeNull();
+    // A size of its own in conversionOptions wins over the default (it did before the default).
+    for (const size of [
+      { width: '1200' },
+      { longSide: '1280' },
+      { scale: '50' },
+      { resizeWidth: 900 },
+      { resizeHeight: 900 },
+    ])
+      expect(resolveOptions({ conversionOptions: size }, {}).maxSize).toBeNull();
+    expect(resolveOptions({ conversionOptions: { maxKb: 300 } }, {}).maxSize).toBe(2560);
   });
 
   it('takes the key and the address from the environment when the options have none', () => {
@@ -70,7 +87,16 @@ describe('resolveOptions', () => {
 
 describe('apiConversionOptions', () => {
   it('sends the quality, the size and EXIF only when asked, plus advanced options', () => {
-    expect(apiConversionOptions(resolveOptions({}, {}))).toEqual({ quality: 'balanced' });
+    expect(apiConversionOptions(resolveOptions({}, {}))).toEqual({
+      quality: 'balanced',
+      longSide: '2560',
+    });
+    expect(apiConversionOptions(resolveOptions({ maxSize: null }, {}))).toEqual({
+      quality: 'balanced',
+    });
+    expect(
+      apiConversionOptions(resolveOptions({ conversionOptions: { width: '1200' } }, {})),
+    ).toEqual({ quality: 'balanced', width: '1200' });
     expect(
       apiConversionOptions(
         resolveOptions(

@@ -24,6 +24,22 @@ export function readImageIds(body: unknown): string[] | null {
   return ids as string[];
 }
 
+/** The most images a sample run (`{ limit }`) may try. */
+export const MAX_SAMPLE = 1000;
+
+/** `{ limit?: number }` from a bulk request's body, checked: `null` for every image. */
+export function readLimit(body: unknown): number | null {
+  if (body === undefined || body === null || typeof body !== 'object') return null;
+  const limit = (body as { limit?: unknown }).limit;
+  if (limit === undefined || limit === null) return null;
+  if (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > MAX_SAMPLE)
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      `limit must be a whole number from 1 to ${MAX_SAMPLE}`,
+    );
+  return limit;
+}
+
 /** The records of a product, newest first. */
 export async function productRecords(service: ConverterStudioModuleService, productId: string) {
   return (await service.listImageConversions(

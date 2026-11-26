@@ -8,7 +8,7 @@ import type { TargetFormat } from './formats';
  */
 
 /** The package's version (package.json's, which a unit test holds it to). */
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 export const USER_AGENT = `medusa-plugin-converter-studio/${VERSION}`;
 /** Names this plugin on its API calls (Converter Studio's statistics of its connectors). */
 export const CLIENT_HEADER = { 'X-Converter-Studio-Client': `medusa/${VERSION}` };

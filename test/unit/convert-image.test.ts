@@ -57,6 +57,20 @@ describe('convertImage', () => {
     });
   });
 
+  it('asks for the longer side to be at most 2560 px unless told otherwise', async () => {
+    const api = converter(new Uint8Array([...WEBP, 1]));
+    await convertImage({ client: api.client, fetch: source(png) }, `${SHOP}/a.png`, options);
+    await convertImage(
+      { client: api.client, fetch: source(png) },
+      `${SHOP}/a.png`,
+      resolveOptions({ maxSize: null }, {}),
+    );
+    expect(api.inputs.map((input) => input.options)).toEqual([
+      { quality: 'balanced', longSide: '2560' },
+      { quality: 'balanced' },
+    ]);
+  });
+
   it('names the upload by what the bytes are, not by a wrong extension', async () => {
     const api = converter(new Uint8Array([...WEBP]));
     await convertImage({ client: api.client, fetch: source(heic) }, `${SHOP}/photo.jpg`, options);

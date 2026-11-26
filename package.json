@@ -1,6 +1,6 @@
 {
   "name": "medusa-plugin-converter-studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Medusa v2 plugin: converts product images to WebP, AVIF or JPG (HEIC, PNG, JPG, TIFF, BMP) with Converter Studio's API, automatically on upload or from the admin. Originals are kept and can be restored.",
   "author": "Converter Studio <support@converter.studio> (https://converter.studio)",
   "license": "MIT",
@@ -16,6 +16,7 @@
   "files": [
     ".medusa/server",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "exports": {

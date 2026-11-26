@@ -2,7 +2,7 @@ import type { MedusaRequest, MedusaResponse } from '@medusajs/framework/http';
 import type { Logger } from '@medusajs/framework/types';
 import { ContainerRegistrationKeys, MedusaError } from '@medusajs/framework/utils';
 import { converterStudio, readImageIds } from '../../../../../../lib/http';
-import { endRun, isRunning, startRun } from '../../../../../../lib/runs';
+import { endRun, isRunning, ownRunContext, startRun } from '../../../../../../lib/runs';
 import { convertProductImagesWorkflow } from '../../../../../../workflows/convert-product-images';
 import { loadProduct } from '../../../../../../workflows/steps/load-product';
 
@@ -29,7 +29,10 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const container = req.scope;
   startRun(productId);
   void convertProductImagesWorkflow(container)
-    .run({ input: { product_id: productId, image_ids: imageIds, trigger: 'manual' } })
+    .run({
+      input: { product_id: productId, image_ids: imageIds, trigger: 'manual' },
+      context: ownRunContext(),
+    })
     .catch((error: unknown) =>
       logger.error(
         `Converter Studio: converting the images of product ${productId} failed: ${String(error)}`,

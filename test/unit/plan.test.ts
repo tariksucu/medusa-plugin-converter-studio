@@ -3,6 +3,7 @@ import {
   buildImageUpdate,
   buildRestoreUpdate,
   CREDITS_RETRY_MS,
+  estimateProduct,
   ORIGINAL_URL_KEY,
   planConversions,
   planRestorations,
@@ -326,5 +327,46 @@ describe('productImageStatus', () => {
       saved_bytes: 600,
     });
     expect(summary.blocked_by).toBe('notEnoughCredits');
+  });
+});
+
+describe('estimateProduct', () => {
+  it('counts the images a bulk run would send (one credit each) and the free ones', () => {
+    const p = product({
+      thumbnail: `${S}/own-thumb.heic`,
+      images: [
+        { id: 'img_b', url: `${S}/b.jpg`, rank: 1 },
+        { id: 'img_a', url: `${S}/a.png`, rank: 0 },
+        { id: 'img_c', url: `${S}/c.webp`, rank: 2 },
+        { id: 'img_d', url: `${S}/d.gif`, rank: 3 },
+        { id: 'img_e', url: `${S}/e.jpg`, rank: 4 },
+      ],
+    });
+    const kept = record({
+      image_id: 'img_e',
+      source_url: `${S}/e.jpg`,
+      status: 'skipped',
+      reason: 'resultLarger',
+    });
+    // b.jpg, a.png and the own HEIC thumbnail are sent; c.webp is already WebP; the GIF is not
+    // a chosen format and e.jpg's original was kept after an earlier try (it would come out
+    // larger again).
+    expect(estimateProduct(p, [kept], options, NOW)).toEqual({
+      convert: 3,
+      already_target: 1,
+      left: 2,
+    });
+  });
+
+  it('counts nothing to send for a product converted before', () => {
+    const p = product({
+      thumbnail: `${S}/a-1.webp`,
+      images: [{ id: 'img_a', url: `${S}/a-1.webp`, rank: 0 }],
+    });
+    expect(estimateProduct(p, [], options, NOW)).toEqual({
+      convert: 0,
+      already_target: 1,
+      left: 0,
+    });
   });
 });

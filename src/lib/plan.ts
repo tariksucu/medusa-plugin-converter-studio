@@ -147,6 +147,37 @@ export function planConversions(input: {
   return candidates;
 }
 
+/** What converting a product's images by hand or in bulk would do, before anything is spent. */
+export interface ImageEstimate {
+  /** Images (and an own thumbnail) that would be sent to Converter Studio: one credit each. */
+  convert: number;
+  /** Images already in the target format: never sent, nothing spent. */
+  already_target: number;
+  /** The other images: formats not chosen, or originals kept after an earlier try. */
+  left: number;
+}
+
+/**
+ * Counts a product's images by what a bulk run would do with them. The credits are known only
+ * after a conversion; an image costs one (up to 100 MB), and failed conversions cost nothing.
+ */
+export function estimateProduct(
+  product: ProductData,
+  records: readonly ConversionRecord[],
+  options: ResolvedOptions,
+  now = Date.now(),
+): ImageEstimate {
+  const planned = planConversions({ product, records, options, trigger: 'bulk', now });
+  const urls = product.images.map((image) => image.url);
+  if (product.thumbnail && !urls.includes(product.thumbnail)) urls.push(product.thumbnail);
+  const alreadyTarget = urls.filter((url) => formatFromUrl(url) === options.format).length;
+  return {
+    convert: planned.length,
+    already_target: alreadyTarget,
+    left: Math.max(0, urls.length - planned.length - alreadyTarget),
+  };
+}
+
 /** A conversion that worked: the image's URL becomes `result_url`. */
 export interface Replacement {
   record_id: string;

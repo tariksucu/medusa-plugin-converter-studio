@@ -133,14 +133,26 @@ export interface BulkProgress {
   running: boolean;
   started_at: string | null;
   finished_at: string | null;
+  limit: number | null;
   products_total: number;
   products_done: number;
+  images_done: number;
   converted: number;
   skipped: number;
   failed: number;
   credits: number;
+  credits_kept: number;
   saved_bytes: number;
   stopped_by: string | null;
+}
+
+export interface BulkEstimate {
+  products: number;
+  products_to_convert: number;
+  convert: number;
+  already_target: number;
+  left: number;
+  credits: number;
 }
 
 export interface ConversionRow {
@@ -177,7 +189,12 @@ export const api = {
       imageIds ? { image_ids: imageIds } : {},
     ),
   bulk: () => call<{ bulk: BulkProgress }>('GET', '/bulk'),
-  startBulk: () => call<{ bulk: BulkProgress }>('POST', '/bulk', { action: 'start' }),
+  estimate: () => call<{ estimate: BulkEstimate }>('GET', '/bulk/estimate'),
+  startBulk: (limit?: number) =>
+    call<{ bulk: BulkProgress }>('POST', '/bulk', {
+      action: 'start',
+      ...(limit ? { limit } : {}),
+    }),
   cancelBulk: () => call<{ bulk: BulkProgress }>('POST', '/bulk', { action: 'cancel' }),
   conversions: (limit = 20, offset = 0) =>
     call<{ conversions: ConversionRow[]; count: number }>(

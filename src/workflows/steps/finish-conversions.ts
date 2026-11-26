@@ -14,6 +14,8 @@ export interface ConversionSummary {
   failed: number;
   /** Credits the conversions cost (kept originals included). */
   credits: number;
+  /** Of those, credits spent on images whose original was kept (a larger result, a change). */
+  credits_kept: number;
   /** Bytes saved by the images put in place. */
   saved_bytes: number;
   stopped_by: ErrorCode | null;
@@ -98,6 +100,7 @@ export const finishConversionsStep = createStep(
         (sum, c) => sum + (c.credits ?? 0),
         0,
       ),
+      credits_kept: [...unused, ...converted.skipped].reduce((sum, c) => sum + (c.credits ?? 0), 0),
       saved_bytes: used.reduce((sum, c) => sum + Math.max(0, c.source_size - c.result_size), 0),
       stopped_by: converted.stopped_by,
     };

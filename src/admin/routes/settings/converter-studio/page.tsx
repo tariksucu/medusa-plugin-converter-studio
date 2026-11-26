@@ -24,6 +24,12 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
+/** Images a sample run tries, before converting the whole catalog. */
+const SAMPLE = 10;
+
+const plural = (count: number, one: string, many = `${one}s`) =>
+  `${count} ${count === 1 ? one : many}`;
+
 const statusColor = (status: ConversionRow['status']) =>
   ({ converted: 'green', processing: 'blue', failed: 'red', skipped: 'grey', restored: 'grey' })[
     status
@@ -34,6 +40,7 @@ const ConverterStudioSettingsPage = () => {
   const overview = usePolled('overview', api.overview, () => false);
   const bulk = usePolled('bulk', api.bulk, (data) => (data?.bulk.running ? 2000 : false));
   const running = bulk.data?.bulk.running ?? false;
+  const estimate = usePolled('estimate', api.estimate, () => false);
   const log = usePolled(
     'conversions',
     () => api.conversions(20, 0),
@@ -46,13 +53,14 @@ const ConverterStudioSettingsPage = () => {
     if (wasRunning.current && !running) {
       log.refresh();
       overview.refresh();
+      estimate.refresh();
     }
     wasRunning.current = running;
   }, [running]);
 
-  const start = useAction(async () => {
+  const start = useAction(async (limit?: number) => {
     try {
-      await api.startBulk();
+      await api.startBulk(limit);
       bulk.refresh();
     } catch (error) {
       toast.error((error as Error).message);
@@ -66,6 +74,8 @@ const ConverterStudioSettingsPage = () => {
   const options = overview.data?.options;
   const account = overview.data?.account;
   const progress = bulk.data?.bulk;
+  const toConvert = estimate.data?.estimate;
+  const nothingToConvert = toConvert !== undefined && toConvert.convert === 0;
   const stoppedForCredits = progress?.stopped_by && CREDIT_CODES.includes(progress.stopped_by);
   const pausedForCredits = overview.data?.pause && CREDIT_CODES.includes(overview.data.pause.code);
 
@@ -174,23 +184,60 @@ const ConverterStudioSettingsPage = () => {
               Stop
             </Button>
           ) : (
-            <Button
-              size="small"
-              variant="secondary"
-              disabled={!options?.configured}
-              isLoading={start.busy}
-              onClick={() => void start.run()}
-            >
-              Convert all
-            </Button>
+            <div className="flex gap-x-2">
+              <Button
+                size="small"
+                variant="secondary"
+                disabled={!options?.configured || nothingToConvert}
+                isLoading={start.busy}
+                onClick={() => void start.run(SAMPLE)}
+              >
+                Try {SAMPLE} images
+              </Button>
+              <Button
+                size="small"
+                variant="secondary"
+                disabled={!options?.configured || nothingToConvert}
+                isLoading={start.busy}
+                onClick={() => void start.run()}
+              >
+                Convert all
+              </Button>
+            </div>
           )}
         </div>
+        {toConvert && options && !progress?.running && (
+          <div className="px-6 py-4">
+            <Text size="small">
+              {toConvert.convert === 0
+                ? 'Nothing to convert now.'
+                : `${plural(toConvert.convert, 'image')} in ${plural(toConvert.products_to_convert, 'product')} to convert: up to ${plural(toConvert.credits, 'credit')} (one an image; a failed conversion costs nothing).`}
+              {toConvert.already_target + toConvert.left > 0 &&
+                ` ${plural(toConvert.already_target, 'image')} already ${options.format.toUpperCase()} and ${toConvert.left} others are left as they are, for free.`}
+              {account && toConvert.credits > account.credits
+                ? ` The account has ${plural(account.credits, 'credit')} left: the run stops when they run out.`
+                : ''}
+            </Text>
+            {toConvert.convert > 0 && (
+              <Text size="small" className="text-ui-fg-subtle">
+                The plugin cannot know beforehand whether a JPG or PNG comes out smaller. When it
+                does not, the original is kept but the credit is spent. Try {SAMPLE} images first to
+                see the savings; Convert all then goes on with the rest and never sends an image
+                twice.
+              </Text>
+            )}
+          </div>
+        )}
         {progress?.started_at && (
           <div className="px-6 py-4">
             <Text size="small">
-              {progress.running ? 'Running: ' : 'Last run: '}
-              {progress.products_done} of {progress.products_total} products, {progress.converted}{' '}
-              images converted, {progress.failed} not converted, {progress.credits} credits,{' '}
+              {progress.running ? 'Running' : 'Last run'}
+              {progress.limit ? ` (a sample of ${progress.limit} images)` : ''}:{' '}
+              {plural(progress.images_done, 'image')} tried in {progress.products_done} of{' '}
+              {plural(progress.products_total, 'product')}: {progress.converted} converted,{' '}
+              {progress.skipped} kept as they were, {progress.failed} not converted ·{' '}
+              {plural(progress.credits, 'credit')}
+              {progress.credits_kept ? ` (${progress.credits_kept} on kept originals)` : ''} ·{' '}
               {formatBytes(progress.saved_bytes)} saved
               {progress.stopped_by ? ` · stopped (${progress.stopped_by})` : ''}
             </Text>

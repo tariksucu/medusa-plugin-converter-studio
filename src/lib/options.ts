@@ -13,8 +13,13 @@ export interface ConverterStudioPluginOptions {
   sources?: SourceFormat[];
   /** How much quality to trade for size: `"high"`, `"balanced"` (default) or `"small"`. */
   quality?: 'high' | 'balanced' | 'small';
-  /** Shrink images whose longer side is larger than this many pixels (never enlarged). */
-  maxSize?: 2560 | 1920 | 1280 | 800 | null;
+  /**
+   * Shrink images whose longer side is larger than this many pixels (never enlarged). Default
+   * 2560; `null` (or `0`) keeps every image at its size. Left out, it is also off when
+   * `conversionOptions` sets a size of its own (`width`, `longSide`, `scale`, `resizeWidth`,
+   * `resizeHeight`).
+   */
+  maxSize?: 2560 | 1920 | 1280 | 800 | 0 | null;
   /** Keep the photo's EXIF details (camera, date). Off by default; GPS is never kept. */
   keepMetadata?: boolean;
   /** The most credits one image may cost before the plugin stops and leaves it (default 1). */
@@ -51,6 +56,13 @@ export interface ResolvedOptions {
 }
 
 export const DEFAULT_API_URL = 'https://converter.studio/api';
+/**
+ * The longest side product images get by default: phone and camera photos (4000-6000 px, often
+ * 5-10 MB) shrink to a size that still fills a retina product page and its zoom.
+ */
+export const DEFAULT_MAX_SIZE = 2560;
+/** Converter Studio options that set an image's size; one of them in `conversionOptions` wins. */
+const SIZE_OPTIONS = ['width', 'longSide', 'scale', 'resizeWidth', 'resizeHeight'];
 const QUALITIES = ['high', 'balanced', 'small'] as const;
 const MAX_SIZES = [2560, 1920, 1280, 800] as const;
 
@@ -141,7 +153,13 @@ export function resolveOptions(
     sources,
     quality: o.quality === undefined ? 'balanced' : oneOf('quality', o.quality, QUALITIES),
     maxSize:
-      o.maxSize === undefined || o.maxSize === null ? null : oneOf('maxSize', o.maxSize, MAX_SIZES),
+      o.maxSize === undefined
+        ? Object.keys(conversionOptions).some((name) => SIZE_OPTIONS.includes(name))
+          ? null
+          : DEFAULT_MAX_SIZE
+        : o.maxSize === null || o.maxSize === 0
+          ? null
+          : oneOf('maxSize', o.maxSize, MAX_SIZES),
     keepMetadata: o.keepMetadata === undefined ? false : bool('keepMetadata', o.keepMetadata),
     maxCredits: o.maxCredits === undefined ? 1 : integer('maxCredits', o.maxCredits, 1, 1000),
     autoConvert: o.autoConvert === undefined ? true : bool('autoConvert', o.autoConvert),

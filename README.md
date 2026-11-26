@@ -10,15 +10,20 @@ product, and you can also start it from the admin.
   product's gallery, thumbnail and variant thumbnails.
 - **HEIC from phones just works.** Browsers other than Safari cannot show HEIC photos. The plugin
   turns them into WebP or JPG.
+- **Large photos are made smaller.** Photos whose longer side is over 2560 pixels (phone and
+  camera photos, often 5–10 MB) are scaled down to 2560 px, which still fills a sharp product page
+  and its zoom. Change it with `maxSize`, or turn it off.
 - **Originals are kept.** The original file stays in your storage, and its URL is saved in the
   image's metadata (`converter_studio_original_url`). You can put the originals back with one
   click.
 - **Safe for credits.** Each image goes ahead only up to `maxCredits` (default 1). If a converted
-  JPG or PNG comes out larger than the original, the original stays. When the account runs out
-  of credits, the plugin stops, keeps the originals and tells you in the admin.
+  JPG or PNG comes out larger than the original, the original stays. Before converting the whole
+  catalog, the admin shows how many images would be converted and what that can cost, and lets you
+  try 10 images first. When the account runs out of credits, the plugin stops, keeps the
+  originals and tells you in the admin.
 - **Admin.** A product page widget shows each image's state and has _Convert images_ and _Restore
   originals_ buttons. A settings page (Settings → Converter Studio) shows your plan and
-  remaining credits, can convert the whole catalog, and lists the latest conversions.
+  remaining credits, can convert a sample or the whole catalog, and lists the latest conversions.
 - **Works with any file provider.** Local, S3, MinIO, R2 and others: the plugin saves converted
   files through Medusa's File Module, so your storage setup stays the same.
 - **Privacy.** EXIF details (camera, date, GPS location) are removed by default.
@@ -66,28 +71,29 @@ npx medusa db:migrate
 ```
 
 New product images are now converted automatically. To convert the images you already have, open
-**Settings → Converter Studio** and click **Convert all**, or use **Convert images** on a
-product's page.
+**Settings → Converter Studio**: it shows how many images would be converted. Click **Try 10
+images** to see the savings first, then **Convert all**. Or use **Convert images** on a product's
+page.
 
 ## Options
 
 All options are optional.
 
-| Option              | Default                        | What it does                                                                                                                                                                                              |
-| ------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiKey`            | `CONVERTER_STUDIO_API_KEY`     | Your Converter Studio API key. Without one, the plugin does nothing and logs a warning.                                                                                                                   |
-| `format`            | `"webp"`                       | What images become: `"webp"`, `"avif"` or `"jpg"`.                                                                                                                                                        |
-| `sources`           | depends on `format`            | Formats to convert. WebP: `jpg`, `png`, `heic`, `tiff`, `bmp`. AVIF: the same plus `webp`. JPG: `heic`, `tiff`, `bmp` (only formats browsers cannot show). `gif` can be added, but animation is not kept. |
-| `quality`           | `"balanced"`                   | `"high"`, `"balanced"` or `"small"`.                                                                                                                                                                      |
-| `maxSize`           | `null`                         | Shrinks images whose longer side is larger: `2560`, `1920`, `1280` or `800` pixels. Images are never made larger.                                                                                         |
-| `keepMetadata`      | `false`                        | Keeps EXIF details (camera, date). The GPS location is still removed.                                                                                                                                     |
-| `maxCredits`        | `1`                            | The most credits one image may cost. A more expensive conversion is skipped and the original kept.                                                                                                        |
-| `autoConvert`       | `true`                         | Converts images when products are created or updated. Set to `false` to convert only from the admin.                                                                                                      |
-| `onlyIfSmaller`     | `true`                         | Keeps a JPG or PNG original when the converted file would be larger. HEIC, TIFF and BMP are always converted.                                                                                             |
-| `concurrency`       | `2`                            | Images converted at the same time (1–5).                                                                                                                                                                  |
-| `timeoutSeconds`    | `180`                          | The longest one conversion may take.                                                                                                                                                                      |
-| `conversionOptions` | `{}`                           | Further [Converter Studio options](https://converter.studio/developers), passed on unchanged (for example `{ "maxKb": 300 }` or `{ "lossless": true }`).                                                  |
-| `apiUrl`            | `https://converter.studio/api` | The API's address. Change it only for testing.                                                                                                                                                            |
+| Option              | Default                        | What it does                                                                                                                                                                                                                                                           |
+| ------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apiKey`            | `CONVERTER_STUDIO_API_KEY`     | Your Converter Studio API key. Without one, the plugin does nothing and logs a warning.                                                                                                                                                                                |
+| `format`            | `"webp"`                       | What images become: `"webp"`, `"avif"` or `"jpg"`.                                                                                                                                                                                                                     |
+| `sources`           | depends on `format`            | Formats to convert. WebP: `jpg`, `png`, `heic`, `tiff`, `bmp`. AVIF: the same plus `webp`. JPG: `heic`, `tiff`, `bmp` (only formats browsers cannot show). `gif` can be added, but animation is not kept.                                                              |
+| `quality`           | `"balanced"`                   | `"high"`, `"balanced"` or `"small"`.                                                                                                                                                                                                                                   |
+| `maxSize`           | `2560`                         | Shrinks images whose longer side is larger: `2560`, `1920`, `1280` or `800` pixels. Images are never made larger. `null` (or `0`) keeps every image at its size.                                                                                                       |
+| `keepMetadata`      | `false`                        | Keeps EXIF details (camera, date). The GPS location is still removed.                                                                                                                                                                                                  |
+| `maxCredits`        | `1`                            | The most credits one image may cost. A more expensive conversion is skipped and the original kept.                                                                                                                                                                     |
+| `autoConvert`       | `true`                         | Converts images when products are created or updated. Set to `false` to convert only from the admin.                                                                                                                                                                   |
+| `onlyIfSmaller`     | `true`                         | Keeps a JPG or PNG original when the converted file would be larger. HEIC, TIFF and BMP are always converted.                                                                                                                                                          |
+| `concurrency`       | `2`                            | Images converted at the same time (1–5).                                                                                                                                                                                                                               |
+| `timeoutSeconds`    | `180`                          | The longest one conversion may take.                                                                                                                                                                                                                                   |
+| `conversionOptions` | `{}`                           | Further [Converter Studio options](https://converter.studio/developers), passed on unchanged (for example `{ "maxKb": 300 }` or `{ "lossless": true }`). A size set here (`width`, `longSide`, `scale`, `resizeWidth`, `resizeHeight`) replaces the default `maxSize`. |
+| `apiUrl`            | `https://converter.studio/api` | The API's address. Change it only for testing.                                                                                                                                                                                                                         |
 
 ## Credits and pricing
 
@@ -102,14 +108,31 @@ When the credits run out:
 - automatic conversions pause for 30 minutes, then try again on the next product change. Click
   **Convert images** (or **Convert all**) once you have credits again.
 
-A failed conversion costs nothing. Converting an image whose result turns out larger (and is
-therefore not used) still costs its credit.
+A failed conversion costs nothing. Images already in the target format are never sent, so they cost
+nothing either. Converting an image whose result turns out larger (and is therefore not used) still
+costs its credit: the plugin cannot know beforehand whether a JPG or PNG will come out smaller.
+That happens mostly with small JPGs that are already well compressed; photos larger than
+`maxSize` nearly always come out much smaller, because they are also scaled down.
+
+Before converting the whole catalog, **Settings → Converter Studio** shows:
+
+- how many images _Convert all_ would send, in how many products, and the most it can cost (one
+  credit an image);
+- how many images it leaves alone for free (already in the target format, a format you did not
+  choose, or an original kept after an earlier try);
+- whether the account has fewer credits than that.
+
+**Try 10 images** converts the first 10 of those images and reports how many were converted, how
+many kept their original, the credits spent (and how many of them on kept originals) and the
+space saved. **Convert all** then goes on with the rest: images converted or kept before are not
+sent again.
 
 ## How it works
 
 1. A product is created or updated. A subscriber (`product.created`, `product.updated`) starts the
    `converter-studio-convert-product-images` workflow in the background. The product itself is
-   saved right away, with the originals.
+   saved right away, with the originals. The plugin's own updates (a converted or restored image
+   put in place) do not start it again, so converting one image or a sample converts only those.
 2. The workflow locks the product, so only one run works on it at a time. It then picks the images
    that need converting.
 3. Each image is downloaded from its URL and sent to Converter Studio
@@ -139,14 +162,15 @@ await convertProductImagesWorkflow(container).run({ input: { product_id, trigger
 
 All routes require an admin login.
 
-| Route                                               | Purpose                                                            |
-| --------------------------------------------------- | ------------------------------------------------------------------ |
-| `GET /admin/converter-studio`                       | Options in effect (without the key), plan and credits              |
-| `GET /admin/converter-studio/products/:id`          | Each image's state                                                 |
-| `POST /admin/converter-studio/products/:id/convert` | Convert the product's images (`{ image_ids? }`), in the background |
-| `POST /admin/converter-studio/products/:id/restore` | Put the originals back (`{ image_ids? }`)                          |
-| `GET /admin/converter-studio/conversions`           | Latest conversions (`limit`, `offset`, `status`)                   |
-| `GET`/`POST /admin/converter-studio/bulk`           | Convert every product's images (`{ action: "start" \| "cancel" }`) |
+| Route                                               | Purpose                                                                                                                |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `GET /admin/converter-studio`                       | Options in effect (without the key), plan and credits                                                                  |
+| `GET /admin/converter-studio/products/:id`          | Each image's state                                                                                                     |
+| `POST /admin/converter-studio/products/:id/convert` | Convert the product's images (`{ image_ids? }`), in the background                                                     |
+| `POST /admin/converter-studio/products/:id/restore` | Put the originals back (`{ image_ids? }`)                                                                              |
+| `GET /admin/converter-studio/conversions`           | Latest conversions (`limit`, `offset`, `status`)                                                                       |
+| `GET`/`POST /admin/converter-studio/bulk`           | Convert every product's images (`{ action: "start" \| "cancel", limit? }`; `limit`: try only that many images, 1–1000) |
+| `GET /admin/converter-studio/bulk/estimate`         | What converting every product's images would send and can cost, before anything is spent                               |
 
 ## Good to know
 
